@@ -1,0 +1,23 @@
+*~
+*.pyc
+#*
+
+# Eclipse
+.project
+.classpath
+.settings
+.cproject
+.metadata
+
+#TaskEditor
+TaskEditor-GUI.ini*
+scenario*.yaml
+waypoints*.yaml
+map.pgm
+map.yaml
+
+#document
+/doc
+
+#vscode
+.vscode

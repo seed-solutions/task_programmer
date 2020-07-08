@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>SEED Graind Station webUI</title>
+    <meta name="description" content="SEED-Moverを操作するためのwebUIです。">
+    <link rel="stylesheet" href="common/css/normalize.css">
+    <link rel="stylesheet" href="common/css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/bxslider/4.2.12/jquery.bxslider.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/bxslider/4.2.12/jquery.bxslider.min.js"></script>
+    <!-- for ROS -->
+    <script src="http://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+    <script src="http://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+    <!-- for 2dnav -->
+    <script src="http://static.robotwebtools.org/EaselJS/current/easeljs.min.js"></script>
+    <script src="http://static.robotwebtools.org/ros2djs/current/ros2d.min.js"></script>
+    <script src="http://static.robotwebtools.org/nav2djs/current/nav2d.min.js"></script>
+
+    <script>
+    $(document).ready(function(){
+      $('.bxslider').bxSlider({
+        auto: true,
+        speed: 1000,
+        pause: 4000
+      });
+    });
+    </script>
+
+  <script src="js/script.js"></script>
+  </head>
+  <body>
+
+  <div id="page">
+    <header id="pageHead">
+      <h1 id="siteTitle">SEED Grand Station web UI</h1>
+      <p id="catchcopy">誰でも簡単にロボットを動かせるように</p>
+        <nav class="globalNavi">
+          <ul>
+            <li class="current"><a href="index.html">ホーム</a></li>
+            <li><a href="Mover.html">SEED-Mover</a></li>
+            <li><a href="Noid_Mover.html">SEED-Noid-Mover</a></li>
+            <li><a href="Teleoperation.html">Teleoperation</a></li>
+          </ul>
+        </nav>
+    </header>
+
+    <div id="pageBody">
+      <section class="mainVisual">
+        <ul class="bxslider">
+          <li>
+              <div class="mainVisualText">
+                <h1>SEED-Mover</h1>
+                <p>SEED-Moverを動かすためのwebUI<br>
+                  自律移動とリフター制御が可能</p>
+              </div>
+              <img src="images/Mover.PNG" width="980" height="500" alt="">
+          </li>
+          <li>
+              <div class="mainVisualText">
+                <h1>SEED-Noid-Mover</h1>
+                <p>SEED-Noid-Moverを動かすためのwebUI<br>自律ピッキングが可能</p>
+              </div>
+              <img src="images/SEED-Noid.PNG" width="980" height="500" alt="">
+          </li>
+          <li>
+            <div class="mainVisualText">
+              <h1>Teleoperation</h1>
+              <p>遠隔操作用webUI<br>
+                モーショントレースやモーションプレイが可能</p>
+            </div>
+            <img src="images/Teleoperation.JPG" width="980" height="500" alt="">
+          </li>
+        </ul>
+      </section>
+
+      <section class="portfolioIndex">
+        <article>
+          <a href="Mover.html"><img src="images/Mover.PNG" width="300" height="163" alt=""></a>
+          <h2><a href="Mover.html">SEED-Mover</a></h2>
+          <p>SEED-Moverを動かすためのwebUI<br>自律移動とリフター制御が可能</p>
+        </article>
+  
+        <article>
+          <a href="Noid_Mover.html"><img src="images/SEED-Noid.PNG" width="300" height="163" alt=""></a>
+          <h2><a href="Noid_Mover.html">SEED-Noid-Mover</a></h2>
+          <p>SEED-Noid-Moverを動かすためのwebUI<br>自律ピッキングが可能</p>
+        </article>
+        
+        <article>
+          <a href="Teleoperation.html"><img src="images/Teleoperation.JPG" width="300" height="163" alt=""></a>
+          <h2><a href="Teleoperation.html">Teleoperation</a></h2>
+          <p>遠隔操作用webUI</br>モーショントレースやモーションプレイが可能</p>
+        </article>
+      </section>
+
+      <section class="news">
+        <h1>おしらせ</h1>
+        <table>
+          <tr>
+            <th><time datatime="2019-8-19">2019年8月19日</time></th>
+            <td>テストページの作成</td>
+          </tr>
+        </table>
+      </section>
+    </div>
+
+    <p class="pagetop"><a href="#page">ページの先頭へ戻る</a></p>
+
+    <footer id="pageFoot">
+        <p id="copyright"><small>&copy; Copyright THK CO., LTD. All Rights Reserved.</small></p>
+    </footer>
+  </div>
+
+  </body>
+</html>

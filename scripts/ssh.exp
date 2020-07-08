@@ -1,0 +1,96 @@
+#!/usr/bin/expect
+
+set ArgNumber [llength $argv]
+set RemoteHost [lindex $argv 0]
+set PW [lindex $argv 1]
+set Prompt "\[#$%>\]"
+set timeout 5
+
+if {${RemoteHost}=="192.168.0.200"} {
+  spawn env LANG=C /usr/bin/ssh ${RemoteHost} -X
+} else {
+  spawn env LANG=C /usr/bin/ssh ${RemoteHost}
+}
+
+expect {
+    -glob "(yes/no)?" {
+        send "yes\n"
+        exp_continue
+    }
+    -glob "password:" {
+        send -- "${PW}\n"
+    }
+}
+
+expect {
+    -glob "${Prompt}" {
+        if {$argc == 3} {
+          send [lindex $argv 2]\n
+        } elseif {$argc == 4} {
+          send [lindex $argv 2]\n
+          send [lindex $argv 3]\n
+        } elseif {$argc == 5} {
+          send [lindex $argv 2]\n
+          send [lindex $argv 3]\n
+          send [lindex $argv 4]\n
+        } elseif {$argc == 6} {
+          send [lindex $argv 2]\n
+          send [lindex $argv 3]\n
+          send [lindex $argv 4]\n
+          send [lindex $argv 5]\n
+        } elseif {$argc == 7} {
+          send [lindex $argv 2]\n
+          send [lindex $argv 3]\n
+          send [lindex $argv 4]\n
+          send [lindex $argv 5]\n
+          send [lindex $argv 6]\n
+        } elseif {$argc == 8} {
+          send [lindex $argv 2]\n
+          send [lindex $argv 3]\n
+          send [lindex $argv 4]\n
+          send [lindex $argv 5]\n
+          send [lindex $argv 6]\n
+          send [lindex $argv 7]\n
+        } elseif {$argc == 9} {
+          send [lindex $argv 2]\n
+          send [lindex $argv 3]\n
+          send [lindex $argv 4]\n
+          send [lindex $argv 5]\n
+          send [lindex $argv 6]\n
+          send [lindex $argv 7]\n
+          send [lindex $argv 8]\n
+        } elseif {$argc == 10} {
+          send [lindex $argv 2]\n
+          send [lindex $argv 3]\n
+          send [lindex $argv 4]\n
+          send [lindex $argv 5]\n
+          send [lindex $argv 6]\n
+          send [lindex $argv 7]\n
+          send [lindex $argv 8]\n
+          send [lindex $argv 9]\n
+        } elseif {$argc == 11} {
+          send [lindex $argv 2]\n
+          send [lindex $argv 3]\n
+          send [lindex $argv 4]\n
+          send [lindex $argv 5]\n
+          send [lindex $argv 6]\n
+          send [lindex $argv 7]\n
+          send [lindex $argv 8]\n
+          send [lindex $argv 9]\n
+          send [lindex $argv 10]\n
+        } elseif {$argc == 12} {
+          send [lindex $argv 2]\n
+          send [lindex $argv 3]\n
+          send [lindex $argv 4]\n
+          send [lindex $argv 5]\n
+          send [lindex $argv 6]\n
+          send [lindex $argv 7]\n
+          send [lindex $argv 8]\n
+          send [lindex $argv 9]\n
+          send [lindex $argv 10]\n
+          send [lindex $argv 11]\n
+        }
+        interact
+        exit 0
+    }
+}

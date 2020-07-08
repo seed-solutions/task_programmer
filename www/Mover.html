@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>SEED-Mover webUI</title>
+    <meta name="description" content="SEED-Moverを操作するためのwebUIです。">
+    <link rel="stylesheet" href="common/css/normalize.css">
+    <link rel="stylesheet" href="common/css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/bxslider/4.2.12/jquery.bxslider.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/bxslider/4.2.12/jquery.bxslider.min.js"></script>
+    <!-- for ROS -->
+    <script src="http://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+    <script src="http://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+    <!-- for 2dnav -->
+    <script src="http://static.robotwebtools.org/EaselJS/current/easeljs.min.js"></script>
+    <script src="http://static.robotwebtools.org/ros2djs/current/ros2d.min.js"></script>
+    <script src="http://static.robotwebtools.org/nav2djs/current/nav2d.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.js"></script>
+
+  <script src="js/script.js"></script>
+  </head>
+  <body onload="createNavigation();createJoystick();createCamera()">
+
+  <div id="page">
+    <header id="pageHead">
+      <h1 id="siteTitle">SEED Grand Station web UI</h1>
+      <p id="catchcopy">誰でも簡単にロボットを動かせるように</p>
+        <nav class="globalNavi">
+          <ul>
+            <li><a href="index.html">ホーム</a></li>
+            <li class="current"><a href="Mover.html">SEED-Mover</a></li>
+            <li><a href="Noid_Mover.html">SEED-Noid-Mover</a></li>
+            <li><a href="Teleoperation.html">Teleoperation</a></li>
+          </ul>
+        </nav>
+    </header>
+
+    <p class="topicPath"><a href="index.html">ホーム</a> &gt; SEED-Mover</p>
+
+<!--
+    <div id="pageBody">
+      <div id="pageBodyMain">
+        <article class="articleDetail">
+          <h1 class="pageTitle">SEED-Mover</h1>
+
+          <p>ここに本文を記述</p>
+          <input type="button" value="ロボットコントローラ起動" onclick="runRobot()">
+
+        </article> 
+      </div> 
+    </div>
+-->
+
+    <section class="rosGUI">
+      <article>
+        <h2>Navigation</h2>
+        <p>オレンジ色が現在値です。</p>
+        <p>ダブルクリックで目標値を設定してください。</p>
+        <div id="nav"></div>
+      </article>
+      <article>
+        <h3>JoyStick</h3>
+        <p>Connection status: <span id="status"></span></p>
+        <p>Last message on /txt_msg: <span id="msg"></span></p>
+        <div id="zone_joystick" style="position: relative;margin-top: 150px;margin-left: -100px;margin-bottom: 250px;"></div>
+        <h3>Camera</h3>
+        <object id="camstream" style="width:450px;height:360px;"></object>
+      </article>
+
+    </section>
+
+    <p class="pagetop"><a href="#page">ページの先頭へ戻る</a></p>
+
+    <footer id="pageFoot">
+      <p id="copyright"><small>&copy; Copyright THK CO., LTD. All Rights Reserved.</small></p>
+    </footer>
+  </div>
+
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- realsense settings -->
+  <arg name="serial_no_camera"    			default="918512073682"/>    <!-- Note: Replace with actual serial number -->
+  <arg name="camera"              			default="front_camera"/>    <!-- Note: Replace with camera name -->
+  <arg name="tf_prefix_camera"         default="$(arg camera)"/>
+  <arg name="initial_reset"             default="false"/>
+
+  <!-- ar marker settings -->
+  <arg name="marker_size" default="6.6" />
+  <arg name="max_new_marker_error" default="0.08" />
+  <arg name="max_track_error" default="0.2" />
+  <arg name="cam_image_topic" default="$(arg camera)/camera/color/image_raw" />
+  <arg name="cam_info_topic" default="$(arg camera)/camera/color/camera_info" />	
+  <arg name="output_frame" default="$(arg camera)_link" />
+
+  <group ns="$(arg camera)">
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="serial_no"             value="$(arg serial_no_camera)"/>
+        <arg name="tf_prefix"         		value="$(arg tf_prefix_camera)"/>
+        <arg name="initial_reset"         value="$(arg initial_reset)"/>
+
+        <arg name="enable_fisheye" value="false"/>
+        <arg name="enable_depth" value="false"/>
+        <arg name="enable_infra1" value="false"/>
+        <arg name="enable_infra2" value="false"/>
+<!--
+        <arg name="color_width" value="1280"/>
+        <arg name="color_height" value="720"/>
+-->
+    </include>
+  </group>
+
+  <node name="ar_track_alvar" pkg="ar_track_alvar"
+        type="individualMarkersNoKinect" respawn="false" output="screen"> 
+        <param name="marker_size"   type="double" value="$(arg marker_size)"/>
+        <param name="max_new_marker_error"  type="double" value="$(arg max_new_marker_error)"/>
+        <param name="max_track_error"   type="double" value="$(arg max_track_error)"/>
+        <param name="output_frame"  type="string" value="$(arg output_frame)"/>
+
+        <remap from="camera_image" to="$(arg cam_image_topic)"/>
+        <remap from="camera_info" to="$(arg cam_info_topic)"/>
+  </node>
+</launch>

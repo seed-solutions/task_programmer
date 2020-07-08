@@ -1,0 +1,17 @@
+- action: 
+    task: lifter
+    arg: 0.0,0.5,1.0
+- action: 
+    task: lifter
+    arg: 0.0,0.857,0.5
+- action: 
+    task: lifter
+    arg: 0.2,0.7,0.5
+- action: 
+    task: lifter
+    arg: -0.2,0.7,0.5
+- action: 
+    task: loop
+    arg: 1,-1
+- action: 
+    task: end

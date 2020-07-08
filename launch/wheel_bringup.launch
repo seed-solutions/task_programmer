@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="real" default="true" />
+  <arg name="joy_pad" default="elecom"/>  <!-- ps3 or elecom -->
+  <arg name="DUALSHOCK" default="true"/>
+
+  <!--  URG Settings -->
+  <arg name="~ip_address" default="192.168.0.10" />
+  <arg name="~frame_id" default="wheels_base_laser_link" />
+
+  <node if="$(arg real)" name="urg_node" pkg="urg_node" type="urg_node" >
+    <param name="~ip_address" value="$(arg ~ip_address)" />
+    <param name="~frame_id" value="$(arg ~frame_id)" />
+
+    <!-- +-115[deg] -->
+    <param name="~angle_min" value="-2.01" />
+    <param name="~angle_max" value="2.01" /> 
+  </node>
+
+  <include file="$(find task_programmer)/launch/joy.launch">
+    <arg name="joy_pad" value="$(arg joy_pad)" />
+    <arg name="DUALSHOCK" value="$(arg DUALSHOCK)"/>
+  </include>
+
+</launch>

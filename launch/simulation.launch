@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="robot_model" default="typeg"/>
+
+  <arg name="localization_map_name" default="map"/>
+  <arg name="keepout_map_name" default="$(arg localization_map_name)" />
+
+  <include file="$(find seed_r7_bringup)/launch/seed_r7_bringup.launch">
+    <arg name="robot_model" value="$(arg robot_model)"/>
+  </include>
+
+  <include file="$(find seed_r7_moveit_config)/../seed_r7_$(arg robot_model)_moveit_config/launch/move_group.launch" />
+
+  <include file="$(find task_programmer)/launch/wheel_bringup.launch">
+    <arg name="real" value="false"/>
+  </include>
+
+  <include file="$(find seed_r7_navigation)/launch/wheel_with_dummy.launch">
+    <arg name="map_localization_file" value="$(find task_programmer)/config/maps/$(arg localization_map_name).yaml"/>
+    <arg name="map_keepout_file" value="$(find task_programmer)/config/maps/$(arg keepout_map_name).yaml"/>
+  </include>
+
+  <node name="task_controller" pkg="task_programmer" type="task_controller" output="screen" />
+  <node name="waypoints_editor" pkg="task_programmer" type="waypoints_editor" />
+
+</launch>

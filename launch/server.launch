@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="CAMERA_STREAM" default="false"/>
+
+  <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="robot_pose_publisher"> </node>
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" >
+    <arg name="port" value="9090"/>
+  </include>
+  <include file="$(find roswww)/launch/roswww.launch" >
+    <arg name="port" value="8085"/>
+  </include>
+
+  <!-- camera stream -->
+  <node pkg="web_video_server" type="web_video_server" name="web_video_server" if="$(arg CAMERA_STREAM)"/>
+  <node name="uvc_camera_node" pkg="uvc_camera" type="uvc_camera_node" if="$(arg CAMERA_STREAM)"/>
+</launch>

@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="serial_no_camera"    			default="918512071076"/> 			<!-- Note: Replace with actual serial number -->
+  <arg name="camera"         			default="rear_camera"/>		<!-- Note: Replace with camera name -->
+  <arg name="tf_prefix_camera"          default="$(arg camera)"/>
+  <arg name="initial_reset"             default="false"/>
+
+  <group ns="$(arg camera)">
+    <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+      <arg name="serial_no"             value="$(arg serial_no_camera)"/>
+      <arg name="tf_prefix"         		value="$(arg tf_prefix_camera)"/>
+
+      <arg name="enable_fisheye"        value="false"/>
+      <arg name="enable_infra1"         value="false"/>
+      <arg name="enable_infra2"         value="false"/>
+      <arg name="enable_color"          value="false"/>
+      <arg name="enable_gyro"           value="false"/>
+      <arg name="enable_accel"          value="false"/>
+
+<!--
+      <arg name="depth_width"         value="1280"/>
+      <arg name="depth_height"        value="720"/>
+      <arg name="infra_width"         default="1280"/>
+      <arg name="infra_height"        default="720"/>
+      <arg name="color_width"         value="1280"/>
+      <arg name="color_height"        value="720"/>
+-->
+    </include>
+  </group>
+
+    <node name="$(arg camera)_depthimage_to_laserscan" pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" >
+      <param name="range_min" value="0.1"/>
+      <param name="range_max" value="5.0"/>
+      <param name="output_frame_id" value="$(arg tf_prefix_camera)_depth_frame"/>
+      <remap from="/image" to="$(arg camera)/camera/depth/image_rect_raw" />
+      <remap from="/camera_info" to="$(arg camera)/camera/depth/camera_info" />
+      <remap from="/scan" to="$(arg tf_prefix_camera)_scan" />
+    </node>
+
+</launch>

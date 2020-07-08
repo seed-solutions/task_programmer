@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>task_programmer</name>
+  <version>0.0.1</version>
+  <description>The task_programmer package</description>
+  <maintainer email="y.shiigi@thk.co.jp">Yasuto Shiigi</maintainer>
+  <license>BSD</license>
+
+  <author>Yasuto Shiigi</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>roslib</depend>
+  <depend>std_msgs</depend>
+  <depend>yaml-cpp</depend>
+  <depend>message_generation</depend>
+
+  <depend>smach</depend>
+  <depend>depthimage_to_laserscan</depend>
+  <depend>ar_track_alvar</depend>
+  <depend>jsk_visualization</depend>
+  <depend>moveit_ros_planning_interface</depend>
+
+  <depend>seed_r7_ros_controller</depend>
+  <depend>seed_r7_bringup</depend>
+  <depend>seed_r7_navigation</depend>
+  <depend>seed_r7_robot_interface</depend>
+  <depend>seed_r7_moveit_config</depend>
+  <depend>seed_r7_typef_moveit_config</depend>
+  <depend>seed_r7_typeg_moveit_config</depend>
+
+  <depend>robot_pose_publisher</depend>
+  <depend>roswww</depend>
+  <depend>rosbridge_server</depend>
+  <depend>web_video_server</depend>
+  <depend>uvc_camera</depend>
+</package>

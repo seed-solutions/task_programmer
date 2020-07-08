@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="real" default="true" />
+  <arg name="robot_model" default="typeg"/>
+  <arg name="GAMEPAD_FUNC" default="false"/>
+
+  <include file="$(find seed_r7_bringup)/launch/seed_r7_bringup.launch">
+    <arg name="robot_model" value="$(arg robot_model)"/>
+  </include>
+
+  <include file="$(find seed_r7_moveit_config)/../seed_r7_$(arg robot_model)_moveit_config/launch/move_group.launch" />
+
+  <include file="$(find task_programmer)/launch/wheel_bringup.launch">
+    <arg name="real" value="$(arg real)"/>
+  </include>
+
+  <node name="task_controller" pkg="task_programmer" type="task_controller" output="screen" />
+  <node name="waypoints_editor" pkg="task_programmer" type="waypoints_editor" />
+
+  <!-- gamepad function -->
+  <node pkg="task_programmer" type="gamepad_function.py" name="gamepad_function" if="$(arg GAMEPAD_FUNC)"/>
+
+</launch>
