@@ -9,8 +9,6 @@
 .cproject
 .metadata
 
-#TaskEditor
-TaskEditor-GUI.ini*
 scenario*.yaml
 waypoints*.yaml
 map.pgm

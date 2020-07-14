@@ -1,0 +1,11 @@
+- action: 
+    task: move
+    arg: 0
+- action: 
+    task: move
+    arg: 1
+- action: 
+    task: move
+    arg: 2
+- action: 
+    task: end
