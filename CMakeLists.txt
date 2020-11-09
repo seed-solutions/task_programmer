@@ -80,4 +80,7 @@ target_link_libraries(waypoints_editor ${catkin_LIBRARIES} ${YAML_CPP_LIBRARIES}
 add_executable(task_controller src/TaskController.cpp)
 target_link_libraries(task_controller ${catkin_LIBRARIES})
 
+add_executable(lifter_controller_node src/lifter_controller.cpp)
+target_link_libraries(lifter_controller_node ${catkin_LIBRARIES} )
+
 add_dependencies(task_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

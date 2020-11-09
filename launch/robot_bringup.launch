@@ -4,6 +4,7 @@
   <arg name="real" default="true" />
   <arg name="robot_model" default="typeg"/>
   <arg name="GAMEPAD_FUNC" default="false"/>
+  <arg name="LIFTER_CONTROL" default="false"/>
 
   <include file="$(find seed_r7_bringup)/launch/seed_r7_bringup.launch">
     <arg name="robot_model" value="$(arg robot_model)"/>
@@ -20,5 +21,8 @@
 
   <!-- gamepad function -->
   <node pkg="task_programmer" type="gamepad_function.py" name="gamepad_function" if="$(arg GAMEPAD_FUNC)"/>
+
+  <!-- control lifter by gamepad -->
+  <node pkg="task_programmer" type="lifter_controller_node" name="lifter_controller_node" if="$(arg LIFTER_CONTROL)"/>
 
 </launch>
