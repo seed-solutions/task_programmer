@@ -36,4 +36,11 @@
   <depend>rosbridge_server</depend>
   <depend>web_video_server</depend>
   <depend>uvc_camera</depend>
+
+  <depend>jsk_common</depend>
+  <depend>rqt_joint_trajectory_controller</depend>
+  <depend>realsense2_camera</depend>
+  <depend>realsense2_description</depend>
+  <depend>rgbd_launch</depend>
+
 </package>
