@@ -7,15 +7,17 @@ local_ip=$5
 command=$6
 
 #ros_ws=/home/seed/ros/kinetic
-#ros_ws=/home/seed/ros/melodic
+ros_ws=/home/seed/ros/melodic
 source ${ros_ws}/devel/setup.bash
 roscd task_programmer/scripts
 
 if [ ${command} = "controller" ]; then 
-  #killall gnome-terminal-server;
+  rosnode kill --all & killall -9 roscore & killall -9 rosmaster;
+  killall gnome-terminal-server;
   gnome-terminal --zoom=0.5 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer robot_bringup.launch;exit\" "'
 
 elif [ ${command} = "make_map" ]; then 
+  sleep 3;
   gnome-terminal --zoom=0.5 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch --wait task_programmer make_map.launch;exit\" "'
 
 elif [ ${command} = "save_map" ]; then
@@ -24,9 +26,10 @@ elif [ ${command} = "save_map" ]; then
 
 elif [ ${command} = "static_map" ]; then 
   map_name=$7
+  sleep 3;
   gnome-terminal --zoom=0.5 \
-    --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch --wait task_programmer static_map.launch localization_map_name:='${map_name}';exit\" "' \
-    --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer --wait realsense_laser.launch;exit\" "'
+    --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch --wait task_programmer static_map.launch localization_map_name:='${map_name}';exit\" "'
+#    --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer --wait realsense_laser.launch;exit\" "'
 
 
 elif [ ${command} = "scenario_start" ]; then 
