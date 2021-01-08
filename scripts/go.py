@@ -15,6 +15,10 @@ import math
 ##-- for find pkg
 import rospkg
 
+##--- follow joint trajectory conntroller
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+##---- joint state 
+from sensor_msgs.msg import JointState
 
 ###########################################
 ## @brief ナビゲーション関連のクラス
@@ -58,8 +62,8 @@ class NaviAction:
 
     rospy.loginfo('Sending goal')
     self.ac.send_goal(self.goal)
-    succeeded = self.ac.wait_for_result(rospy.Duration(60));
-    state = self.ac.get_state();
+    succeeded = self.ac.wait_for_result(rospy.Duration(60))
+    state = self.ac.get_state()
     if succeeded:
       rospy.loginfo("Succeed")
       return 'succeeded'
@@ -137,14 +141,42 @@ class NaviAction:
   def shutdown(self):
     self.ac.cancel_goal()
 
+###########################################
+class TrajectoryAction:
+  def __init__(self):
+    self.pub = rospy.Publisher('lifter_controller/command', JointTrajectory, queue_size=10)
+    self.msg = JointTrajectory()
+    self.msg.joint_names = ["ankle_joint","knee_joint"]
+    self.msg.points = [JointTrajectoryPoint() for i in range(1)]
+    rospy.sleep(0.5)
+
+  def set_lifter_goal(self, _pos):
+    lifter_position_str = (_pos).split(',')
+    lifter_position = [float(s) for s in lifter_position_str]
+
+    self.msg.header.stamp = rospy.Time.now()
+    self.msg.points[0].positions = [math.radians(lifter_position[0]), -math.radians(lifter_position[1])]
+    self.msg.points[0].time_from_start = rospy.Time(lifter_position[2]/1000)
+
+    self.pub.publish(self.msg)
+
 #==================================
 #==================================
 if __name__ == '__main__':
   rospy.init_node('got_to_waypoint_server')
 
   na = NaviAction()
+  ta = TrajectoryAction()
 
-  if(len(sys.argv) != 2): na.cancel()
-  else:
+  if(len(sys.argv) < 2):
+    na.cancel()
+  elif(len(sys.argv) < 3):
     waypoint = int(sys.argv[1])
     na.set_goal(int(waypoint))
+  else:
+    if(int(sys.argv[1]) is not -1):
+      waypoint = int(sys.argv[1])
+      na.set_goal(int(waypoint))
+    else:
+      print("not go to waypoint")
+    ta.set_lifter_goal(sys.argv[2])

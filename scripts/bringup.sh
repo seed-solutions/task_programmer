@@ -51,6 +51,7 @@ elif [ ${command} = "operation" ]; then
   scenario_name=$8
   map_name=$9
   way_point=${10}
+  lifter_position=${11}
 
   if [ ${action} = "start" ]; then 
     gnome-terminal --zoom=0.5 \
@@ -75,7 +76,7 @@ elif [ ${command} = "operation" ]; then
     rosrun task_programmer go.py
   elif [ ${action} = "go_waypoint" ]; then 
     export ROS_MASTER_URI=http://${robot_ip}:11311;export ROS_IP=${local_ip};
-    rosrun task_programmer go.py ${way_point}
+    rosrun task_programmer go.py ${way_point} ${lifter_position}
   elif [ ${action} = "stop" ]; then 
     killall gnome-terminal-server&
     expect ssh.exp ${user_name}@${robot_ip} ${password} "export DISPLAY=:0.0;killall gnome-terminal-server; bash '${ros_ws}'/src/task_programmer/scripts/teleop_mover.sh"
