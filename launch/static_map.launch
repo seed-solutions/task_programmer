@@ -4,6 +4,8 @@
   <arg name="can_del_wp" default="true"/>
   <arg name="localization_map_name" default="map"/>
   <arg name="keepout_map_name" default="keepout" />
+
+  <node name="waypoints_editor" pkg="task_programmer" type="waypoints_editor" />
   
   <include file="$(find seed_r7_navigation)/launch/wheel_with_static_map.launch">
     <arg name="RUN_BRINGUP" default="false" />

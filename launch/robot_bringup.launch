@@ -17,7 +17,6 @@
   </include>
 
   <node name="task_controller" pkg="task_programmer" type="task_controller" output="screen" />
-  <node name="waypoints_editor" pkg="task_programmer" type="waypoints_editor" />
 
   <!-- gamepad function -->
   <node pkg="task_programmer" type="gamepad_function.py" name="gamepad_function" if="$(arg GAMEPAD_FUNC)"/>
