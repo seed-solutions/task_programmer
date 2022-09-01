@@ -43,4 +43,7 @@
   <depend>realsense2_description</depend>
   <depend>rgbd_launch</depend>
 
+  <depend>global_planner</depend>
+  <depend>twist_mux</depend>
+
 </package>

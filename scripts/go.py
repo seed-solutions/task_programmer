@@ -15,6 +15,9 @@ import math
 ##-- for find pkg
 import rospkg
 
+##-- for dynamic reconfigure
+import dynamic_reconfigure.client
+
 ##--- follow joint trajectory conntroller
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 ##---- joint state 
@@ -27,15 +30,16 @@ class NaviAction:
   def __init__(self):
     rospack = rospkg.RosPack()
     rospack.list() 
-    path = rospack.get_path('task_programmer')
+    self.path = rospack.get_path('task_programmer')
     ## @brief 読み込まれたwaypointsのデータ
-    self.config = yaml.load(file(path + "/config/waypoints.yaml"))
+    self.wp_client = dynamic_reconfigure.client.Client("/waypoints_editor", timeout=30)
+    # self.config = yaml.load(file(path + "/config/waypoints.yaml"))
     rospy.on_shutdown(self.shutdown)
     ## @brief /move_baseアクションクライアント
     self.ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
     while not self.ac.wait_for_server(rospy.Duration(5)):
       rospy.loginfo("Waiting for the move_base action server to come up")
-    rospy.loginfo("The server comes up");
+    rospy.loginfo("The server comes up")
     ## @brief MoveBaseGoal型のゴール
     self.goal = MoveBaseGoal()
 
@@ -48,7 +52,16 @@ class NaviAction:
   def set_goal(self,_number):
     rospy.on_shutdown(self.shutdown)
 
-    rev = dict(self.config[_number]) #List to Dictionary
+    dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
+    file_name = self.wp_client.get_configuration(timeout=5)['file_name']
+    with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
+        config = yaml.safe_load(f)
+
+    if(_number >= len(config)):
+      rospy.logerr("wp number is not exist.")
+      return 'aborted'
+
+    rev = dict(config[_number]) #List to Dictionary
 
     self.goal.target_pose.header.frame_id = 'map'
     self.goal.target_pose.header.stamp = rospy.Time.now()
@@ -77,7 +90,15 @@ class NaviAction:
   def set_via_point(self,_number):
     rospy.on_shutdown(self.shutdown)
 
-    rev = dict(self.config[_number]) #List to Dictionary
+    dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
+    file_name = self.wp_client.get_configuration(timeout=5)['file_name']
+    with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
+        config = yaml.safe_load(f)
+
+    if(_number >= len(config)):
+      rospy.logerr("wp number is not exist.")
+      return 'aborted'
+    rev = dict(config[_number]) #List to Dictionary
 
     self.goal.target_pose.header.frame_id = 'map'
     self.goal.target_pose.header.stamp = rospy.Time.now()
@@ -174,9 +195,9 @@ if __name__ == '__main__':
     waypoint = int(sys.argv[1])
     na.set_goal(int(waypoint))
   else:
-    if(int(sys.argv[1]) is not -1):
+    if(int(sys.argv[1]) != -1):
       waypoint = int(sys.argv[1])
       na.set_goal(int(waypoint))
     else:
-      print("not go to waypoint")
+      rospy.logerr("wp number is not exist.")
     ta.set_lifter_goal(sys.argv[2])

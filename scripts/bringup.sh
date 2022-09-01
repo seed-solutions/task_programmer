@@ -6,8 +6,16 @@ password=$4
 local_ip=$5
 command=$6
 
-#ros_ws=/home/seed/ros/kinetic
-ros_ws=/home/seed/ros/melodic
+##----- version check ----------
+#version=`cat /etc/lsb-release | grep DISTRIB_RELEASE`
+#if [[ ${version} =~ "16" ]]; then
+#  ros_ws=/home/seed/ros/kinetic
+#elif [[ ${version} =~ "18" ]]; then
+#  ros_ws=/home/seed/ros/melodic
+#elif [[ ${version} =~ "20" ]]; then
+#  ros_ws=/home/seed/ros/noetic
+#fi
+##-------------------------------
 source ${ros_ws}/devel/setup.bash
 roscd task_programmer/scripts
 
@@ -17,24 +25,22 @@ if [ ${command} = "controller" ]; then
   gnome-terminal --zoom=0.5 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer robot_bringup.launch;exit\" "'
 
 elif [ ${command} = "make_map" ]; then 
-  sleep 3;
   gnome-terminal --zoom=0.5 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch --wait task_programmer make_map.launch;exit\" "'
 
 elif [ ${command} = "save_map" ]; then
   map_name=$7
-  gnome-terminal --zoom=0.5 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer map_saver.launch map_name:='${map_name}' ;exit\" "'
+  gnome-terminal --zoom=0.5 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer map_saver.launch dir_name:='${map_name}' ;exit\" "'
 
 elif [ ${command} = "static_map" ]; then 
   map_name=$7
-  sleep 3;
   gnome-terminal --zoom=0.5 \
-    --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch --wait task_programmer static_map.launch localization_map_name:='${map_name}';exit\" "'
+    --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch --wait task_programmer static_map.launch dir_name:='${map_name}' can_del_wp:=true; exit\" "'
 #    --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer --wait realsense_laser.launch;exit\" "'
 
 
 elif [ ${command} = "scenario_start" ]; then 
   scenario_name=$7
-  gnome-terminal --zoom=0.5 --geometry=+0+0 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"rosrun task_programmer start.py '${scenario_name}';exit\" "'
+  gnome-terminal --zoom=0.5 --geometry=+0+0 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"export DISPLAY=:0.0;rosrun task_programmer start.py '${scenario_name}';exit\" "'
 
 elif [ ${command} = "scenario_stop" ]; then
     export ROS_MASTER_URI=http://${robot_ip}:11311;export ROS_IP=${local_ip};
@@ -44,7 +50,7 @@ elif [ ${command} = "scenario_restart" ]; then
   gnome-terminal --zoom=0.5 --geometry=+0+0 --tab -e 'bash -c "export ROS_MASTER_URI=http://'${robot_ip}':11311;export ROS_IP='${local_ip}';rosparam set /task_programmer/wait_task False ;exit"'
 
 elif [ ${command} = "rviz" ]; then 
-  gnome-terminal --zoom=0.5 --tab -e 'bash -c "export ROS_MASTER_URI=http://'${robot_ip}':11311;export ROS_IP='${local_ip}';roslaunch --wait task_programmer view.launch;exit"'
+  gnome-terminal --zoom=0.5 --tab -e 'bash -c "export ROS_MASTER_URI=http://'${robot_ip}':11311;export ROS_IP='${local_ip}';sleep 3;roslaunch --wait task_programmer view.launch;exit"'
 
 elif [ ${command} = "operation" ]; then 
   action=$7
@@ -58,10 +64,10 @@ elif [ ${command} = "operation" ]; then
       --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"rosnode kill --all;killall -9 roscore;killall -9 rosmaster;exit\" "';
     gnome-terminal --zoom=0.5 \
       --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer robot_bringup.launch;exit\" "' \
-      --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch --wait  task_programmer static_map.launch  localization_map_name:='${map_name}';exit\" "' \
-      --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer --wait realsense_laser.launch;exit\" "' \
+      --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch --wait  task_programmer static_map.launch dir_name:='${map_name}';exit\" "' \
       --tab -e 'bash -c "export ROS_MASTER_URI=http://'${robot_ip}':11311;export ROS_IP='${local_ip}';sleep 5;roslaunch --wait task_programmer view.launch;exit"' \
       --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"sleep 5;rosrun task_programmer start.py '${scenario_name}';exit\" "'
+#      --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer --wait realsense_laser.launch;exit\" "' 
 
   elif [ ${action} = "previous" ]; then 
     export ROS_MASTER_URI=http://${robot_ip}:11311;export ROS_IP=${local_ip};
@@ -73,10 +79,14 @@ elif [ ${command} = "operation" ]; then
     rosparam set /task_programmer/wait_task False ;
   elif [ ${action} = "pause" ]; then 
     export ROS_MASTER_URI=http://${robot_ip}:11311;export ROS_IP=${local_ip};
-    rosrun task_programmer go.py
+#    rosrun task_programmer go.py
+    gnome-terminal --zoom=0.5 \
+      --geometry=+0+0 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"export DISPLAY=:0.0;rosrun task_programmer go.py ;exit\" "'
   elif [ ${action} = "go_waypoint" ]; then 
     export ROS_MASTER_URI=http://${robot_ip}:11311;export ROS_IP=${local_ip};
-    rosrun task_programmer go.py ${way_point} ${lifter_position}
+#    rosrun task_programmer go.py ${way_point} ${lifter_position}
+    gnome-terminal --zoom=0.5 \
+      --geometry=+0+0 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"export DISPLAY=:0.0;rosrun task_programmer go.py '${way_point}' '${lifter_position}';exit\" "'
   elif [ ${action} = "stop" ]; then 
     killall gnome-terminal-server&
     expect ssh.exp ${user_name}@${robot_ip} ${password} "export DISPLAY=:0.0;killall gnome-terminal-server; bash '${ros_ws}'/src/task_programmer/scripts/teleop_mover.sh"
@@ -119,4 +129,7 @@ elif [ ${command} = "check_wifi" ]; then
     fi
   done
 
+elif [ ${command} = "check_wp_dir" ]; then 
+    export ROS_MASTER_URI=http://${robot_ip}:11311;export ROS_IP=${local_ip};
+    rosparam get /waypoints_editor/dir_name;
 fi

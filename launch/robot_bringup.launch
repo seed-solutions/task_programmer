@@ -3,8 +3,8 @@
 
   <arg name="real" default="true" />
   <arg name="robot_model" default="typeg"/>
-  <arg name="GAMEPAD_FUNC" default="false"/>
-  <arg name="LIFTER_CONTROL" default="false"/>
+  <arg name="GAMEPAD_FUNC" default="true"/>
+  <arg name="LIFTER_CONTROL" default="true"/>
 
   <include file="$(find seed_r7_bringup)/launch/seed_r7_bringup.launch">
     <arg name="robot_model" value="$(arg robot_model)"/>

@@ -1,6 +1,6 @@
 axis_linear:
   x: 1      #left axis up/down
-  y: 2      #right axis left/right
+  y: 3      #right axis left/right
 scale_linear:
   x: 0.2       #0.4
   y: 0.1
@@ -15,5 +15,5 @@ scale_angular:
 scale_angular_turbo:
   yaw: 0.8
 
-enable_button: 10       #L1 button
-enable_turbo_button: 8  #L2 button
+enable_button: 4        #L1 button
+enable_turbo_button: 6  #L2 button

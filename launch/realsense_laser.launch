@@ -2,7 +2,7 @@
 <launch>
 
   <arg name="serial_no_camera"    			default="918512071076"/> 			<!-- Note: Replace with actual serial number -->
-  <arg name="camera"         			default="rear_camera"/>		<!-- Note: Replace with camera name -->
+  <arg name="camera"         			      default="rear_camera"/>		<!-- Note: Replace with camera name -->
   <arg name="tf_prefix_camera"          default="$(arg camera)"/>
   <arg name="initial_reset"             default="false"/>
 

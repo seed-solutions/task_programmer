@@ -2,8 +2,10 @@
 <launch>
   <arg name="robot_model" default="typeg"/>
 
+  <arg name="dir_name" default="/config/maps"/>
+  <arg name="can_del_wp" default="true"/>
   <arg name="localization_map_name" default="map"/>
-  <arg name="keepout_map_name" default="$(arg localization_map_name)" />
+  <arg name="keepout_map_name" default="keepout" />
 
   <include file="$(find seed_r7_bringup)/launch/seed_r7_bringup.launch">
     <arg name="robot_model" value="$(arg robot_model)"/>
@@ -16,11 +18,20 @@
   </include>
 
   <include file="$(find seed_r7_navigation)/launch/wheel_with_dummy.launch">
-    <arg name="map_localization_file" value="$(find task_programmer)/config/maps/$(arg localization_map_name).yaml"/>
-    <arg name="map_keepout_file" value="$(find task_programmer)/config/maps/$(arg keepout_map_name).yaml"/>
+    <arg name="map_localization_file" value="$(find task_programmer)$(arg dir_name)/$(arg localization_map_name).yaml"/>
+    <arg name="map_keepout_file" value="$(find task_programmer)$(arg dir_name)/$(arg keepout_map_name).yaml"/>
+    <arg name="cmd_vel_topic" value="move_base/cmd_vel"/>
   </include>
 
   <node name="task_controller" pkg="task_programmer" type="task_controller" output="screen" />
   <node name="waypoints_editor" pkg="task_programmer" type="waypoints_editor" />
+
+  <node pkg="dynamic_reconfigure" name="wp_editor_set_param"  type="dynparam" args="set_from_parameters waypoints_editor">
+    <param name="dir_name" type="str" value="$(arg dir_name)" />
+    <param name="enable_del" type="bool" value="$(arg can_del_wp)" />
+  </node>
+
+  <!-- gamepad function -->
+  <node pkg="task_programmer" type="gamepad_function.py" name="gamepad_function"/>
 
 </launch>

@@ -6,5 +6,5 @@ axis_angular: 0    #left axis left/right
 scale_angular: 0.8
 scale_angular_turbo: 1.2
 
-enable_button: 10       #L1 button
-enable_turbo_button: 8  #L2 button
+enable_button: 4        #L1 button
+enable_turbo_button: 6  #L2 button
