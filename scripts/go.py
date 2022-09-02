@@ -55,7 +55,7 @@ class NaviAction:
     dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
     file_name = self.wp_client.get_configuration(timeout=5)['file_name']
     with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
-        config = yaml.safe_load(f)
+        config = yaml.safe_load(f) or {}
 
     if(_number >= len(config)):
       rospy.logerr("wp number is not exist.")
@@ -93,7 +93,7 @@ class NaviAction:
     dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
     file_name = self.wp_client.get_configuration(timeout=5)['file_name']
     with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
-        config = yaml.safe_load(f)
+        config = yaml.safe_load(f) or {}
 
     if(_number >= len(config)):
       rospy.logerr("wp number is not exist.")
@@ -199,5 +199,5 @@ if __name__ == '__main__':
       waypoint = int(sys.argv[1])
       na.set_goal(int(waypoint))
     else:
-      rospy.logerr("wp number is not exist.")
+      rospy.loginfo("lifter move only")
     ta.set_lifter_goal(sys.argv[2])

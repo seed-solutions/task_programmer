@@ -70,7 +70,7 @@ class NaviAction:
     dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
     file_name = self.wp_client.get_configuration(timeout=5)['file_name']
     with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
-        config = yaml.safe_load(f)
+        config = yaml.safe_load(f) or {}
 
     if(_number >= len(config)):
       rospy.logerr("wp number is not exist.")
@@ -108,7 +108,7 @@ class NaviAction:
     dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
     file_name = self.wp_client.get_configuration(timeout=5)['file_name']
     with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
-        config = yaml.safe_load(f)
+        config = yaml.safe_load(f) or {}
 
     if(_number >= len(config)):
       rospy.logerr("wp number is not exist.")
@@ -173,7 +173,7 @@ class NaviAction:
     dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
     file_name = self.wp_client.get_configuration(timeout=5)['file_name']
     with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
-      config = yaml.safe_load(f)
+      config = yaml.safe_load(f) or {}
 
     if(_number >= len(config)):
       rospy.logerr("wp number is not exist.")
@@ -701,7 +701,7 @@ class Scenario:
     path = rospack.get_path('task_programmer')
     ## @brief 読み込まれたシナリオのデータ
     with open(path + '/config/scenarios/' + file_name) as f:
-        self.scenario = yaml.safe_load(f)
+        self.scenario = yaml.safe_load(f) or {}
     ## @brief タスクの数
     self.scenario_size = len(self.scenario)
     self.loop_count_array = self.scenario_size * [0]
