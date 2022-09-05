@@ -15,7 +15,6 @@ from actionlib_msgs.msg import *
 from geometry_msgs.msg import *
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import yaml
-import tf
 import math
 ##-- for find pkg
 import rospkg
@@ -30,6 +29,12 @@ from std_srvs.srv import*
 ##-- for dynamic reconfigure
 import dynamic_reconfigure.client
 
+##-- image and video
+from task_programmer.screen import Screen
+
+##-- for test motion of noid
+from task_programmer.motion import Motion
+
 ###########################################
 ## @brief ナビゲーション関連のクラス
 class NaviAction:
@@ -37,15 +42,15 @@ class NaviAction:
   def __init__(self):
     rospack = rospkg.RosPack()
     rospack.list() 
-    path = rospack.get_path('task_programmer')
+    self.path = rospack.get_path('task_programmer')
     ## @brief 読み込まれたwaypointsのデータ
-    self.config = yaml.load(file(path + "/config/waypoints.yaml"))
+    self.wp_client = dynamic_reconfigure.client.Client("/waypoints_editor", timeout=30)
     rospy.on_shutdown(self.shutdown)
     ## @brief /move_baseアクションクライアント
     self.ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
     while not self.ac.wait_for_server(rospy.Duration(5)):
       rospy.loginfo("Waiting for the move_base action server to come up")
-    rospy.loginfo("The server comes up");
+    rospy.loginfo("The server comes up")
     ## @brief MoveBaseGoal型のゴール
     self.goal = MoveBaseGoal()
 
@@ -54,13 +59,24 @@ class NaviAction:
 
     self.tf_listener_ = tf.TransformListener()
 
+    self.wp_number_ = 0
+
   ## @brief ゴールポジションの設定と移動の開始
   # @param _number waypointsの番号(0以上の数値）
   # @return ゴールに到着したか否か（succeeded or aborted）
   def set_goal(self,_number):
     rospy.on_shutdown(self.shutdown)
 
-    rev = dict(self.config[_number]) #List to Dictionary
+    dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
+    file_name = self.wp_client.get_configuration(timeout=5)['file_name']
+    with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
+        config = yaml.safe_load(f) or {}
+
+    if(_number >= len(config)):
+      rospy.logerr("wp number is not exist.")
+      return 'aborted'
+
+    rev = dict(config[_number]) #List to Dictionary
 
     self.goal.target_pose.header.frame_id = 'map'
     self.goal.target_pose.header.stamp = rospy.Time.now()
@@ -74,8 +90,8 @@ class NaviAction:
 
     rospy.loginfo('Sending goal')
     self.ac.send_goal(self.goal)
-    succeeded = self.ac.wait_for_result(rospy.Duration(60));
-    state = self.ac.get_state();
+    succeeded = self.ac.wait_for_result(rospy.Duration(600))
+    state = self.ac.get_state()
     if succeeded:
       rospy.loginfo("Succeed")
       return 'succeeded'
@@ -89,7 +105,15 @@ class NaviAction:
   def set_via_point(self,_number):
     rospy.on_shutdown(self.shutdown)
 
-    rev = dict(self.config[_number]) #List to Dictionary
+    dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
+    file_name = self.wp_client.get_configuration(timeout=5)['file_name']
+    with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
+        config = yaml.safe_load(f) or {}
+
+    if(_number >= len(config)):
+      rospy.logerr("wp number is not exist.")
+      return 'aborted'
+    rev = dict(config[_number]) #List to Dictionary
 
     self.goal.target_pose.header.frame_id = 'map'
     self.goal.target_pose.header.stamp = rospy.Time.now()
@@ -104,19 +128,19 @@ class NaviAction:
     rospy.loginfo('Sending goal')
     self.ac.send_goal(self.goal)
 
-    timeout = time.time() + 60 #[sec]
+    timeout = time.time() + 3600 #[sec]
 
-    while True:
+    while not rospy.is_shutdown():
       try:
         (position, quaternion) = self.tf_listener_.lookupTransform('map', 'base_link', rospy.Time(0) )
       except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         continue
-      
+
       distance = math.sqrt((position[0]-self.goal.target_pose.pose.position.x)**2 \
         + (position[1]-self.goal.target_pose.pose.position.y)**2 )
 
-      #ゴールから0.5[m]以内なら、succeededを返す
-      if(distance <= 0.5):
+      #ゴールから0.1[m]以内なら、succeededを返す
+      if(distance <= 0.1):
         rospy.loginfo("Succeed")
         return 'succeeded'
 
@@ -126,7 +150,7 @@ class NaviAction:
 
       else:
         pass
-        
+
   def set_velocity(self,_x,_y,_theta,_time):
     self.vel_.linear.x = _x
     self.vel_.linear.y = _y
@@ -134,7 +158,7 @@ class NaviAction:
 
     end_time = time.time() + _time #[sec]
 
-    while(time.time() < end_time):
+    while(time.time() < end_time  and not rospy.is_shutdown()):
       self.vel_pub_.publish(self.vel_)
 
     self.vel_.linear.x = 0
@@ -146,14 +170,22 @@ class NaviAction:
     return 'succeeded'
 
   def set_pose(self,_number):
-    rev = dict(self.config[_number]) #List to Dictionary
+    dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
+    file_name = self.wp_client.get_configuration(timeout=5)['file_name']
+    with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
+      config = yaml.safe_load(f) or {}
+
+    if(_number >= len(config)):
+      rospy.logerr("wp number is not exist.")
+      return 'aborted'
+    rev = dict(config[_number]) #List to Dictionary
 
     self.x_ = rev['pose']['position']['x']
     self.y_ = rev['pose']['position']['y']
     (self.roll_,self.pitch_,self.yaw_) = tf.transformations.euler_from_quaternion(
       (rev['pose']['orientation']['x'], rev['pose']['orientation']['y'], 
        rev['pose']['orientation']['z'], rev['pose']['orientation']['w']))
-    
+
     try:
       rospy.loginfo("set initialpose at %s,%s,%s" % (self.x_,self.y_,self.yaw_))
       set_initialpose = rospy.ServiceProxy('set_initialpose', SetInitialPose)
@@ -161,16 +193,17 @@ class NaviAction:
       rospy.sleep(1)
       return 'succeeded'
 
-    except rospy.ServiceException, e:
-      print "Service call failed: %s"%e
+    except rospy.ServiceException as e:
+      rospy.logerr('Service call failed: {}'.format(e))
       return 'aborted'
-        
+
   ## @brief move_baseの終了
   def shutdown(self):
     #ta.set_led(10,2)
     #ta.set_led(11,2)
     #rospy.loginfo("The robot was terminated")
     self.ac.cancel_goal()
+
 #--------------------------------
 ## @brief ”ムーバー移動”ステート
 # @param State smachのステートクラスを継承
@@ -180,7 +213,11 @@ class GO_TO_PLACE(State):
   def __init__(self,_place):
     State.__init__(self, outcomes=['succeeded','aborted'])
     ## @brief waypointsの番号
-    self.place_ = _place
+    self.is_num = any(i.isdigit() for i in str(_place))  #数字か否かの判別
+    if(self.is_num):
+      self.place_ = int(_place)
+    else:
+      self.place_ = na.wp_number_
 
   ## @brief 遷移実行
   # @param userdata 前のステートから引き継がれた変数。今回は使用しない
@@ -188,7 +225,10 @@ class GO_TO_PLACE(State):
   def execute(self, userdata):
     #ta.set_led(10,5)
     #ta.set_led(11,5)
-    print 'Going to Place'+str(self.place_)
+    if(not self.is_num):
+      self.place_ = na.wp_number_   #init_内だと更新されないので、ここでも代入
+    rospy.loginfo('Going to Place{}'.format(self.place_))
+
     if(na.set_goal(self.place_) == 'succeeded'):return 'succeeded'
     else: return 'aborted' 
 
@@ -200,8 +240,11 @@ class GO_TO_VIA_POINT(State):
   def __init__(self,_place):
     State.__init__(self, outcomes=['succeeded','aborted'])
     ## @brief waypointsの番号
-    place_string = _place.split(',')
-    self.place_ = [int(s) for s in place_string]
+    if(',' in str(_place)):
+      place_string = _place.split(',')
+      self.place_ = [int(s) for s in place_string]
+    else:
+      self.place_ = [int(_place),int(_place)]
 
   ## @brief 遷移実行
   # @param userdata 前のステートから引き継がれた変数。今回は使用しない
@@ -209,9 +252,9 @@ class GO_TO_VIA_POINT(State):
   def execute(self, userdata):
     #ta.set_led(10,5)
     #ta.set_led(11,5)
-    print 'Going to Place'+str(self.place_)
+    rospy.loginfo('Going to Place{}'.format(self.place_))
     place_counter = self.place_[0]
-    while(place_counter < self.place_[1]):
+    while(place_counter < self.place_[1] and not rospy.is_shutdown()):
       na.set_via_point(place_counter)
       place_counter += 1
 
@@ -230,7 +273,7 @@ class SET_POSE(State):
   # @param userdata 前のステートから引き継がれた変数。今回は使用しない
   # @return initailposeを設定できたか否か（succeeded or aborted）
   def execute(self, userdata):
-    print 'set initial pose at'+str(self.place_)
+    rospy.loginfo('set initial pose at {}'.format(self.place_))
     if(na.set_pose(self.place_) == 'succeeded'):return 'succeeded'
     else: return 'aborted'
 
@@ -241,10 +284,8 @@ class VELOCITY_MOVE(State):
     self.vel_ = [float(s) for s in velocity_string]
 
   def execute(self, userdata):
-    #ta.set_led(10,6)
-    #ta.set_led(11,6)
-    print 'velocity move ' + str(self.vel_[0]) +',' + str(self.vel_[1]) + ',' +\
-      str(self.vel_[2])  + ') in time ' + str(self.vel_[3])
+    rospy.loginfo('velocity move({},{},{}) in time {}'.format(self.vel_[0],self.vel_[1], 
+                  self.vel_[2],self.vel_[3]))
 
     if(na.set_velocity(self.vel_[0],self.vel_[1],self.vel_[2],self.vel_[3]) == 'succeeded'):return 'succeeded'
     else: return 'aborted'
@@ -259,7 +300,7 @@ class MoveitCommand:
   def __init__(self):
     self.robot = moveit_commander.RobotCommander()
     self.scene = moveit_commander.PlanningSceneInterface()
-    print "set_group"
+
     self.group = moveit_commander.MoveGroupCommander("torso")
     self.group.set_pose_reference_frame("base_link")
     self.group.set_end_effector_link("body_link")
@@ -290,20 +331,19 @@ class MoveitCommand:
     target_pose.position.z = _z + distance_body_to_lifter_top
 
     #self.group.set_start_state_to_current_state()
-    print "set pose"
     self.group.set_pose_target(target_pose)
     self.group.set_max_velocity_scaling_factor(_vel)
 
-    print "plan stat"
     plan = self.group.plan()
+    if type(plan) is tuple: # for noetic
+      plan = plan[1]
 
-    print "check plan"
     if(len(plan.joint_trajectory.points)==0):
       rospy.logwarn("can't be solved lifter ik")
       self.group.clear_pose_targets()
       return 'aborted'
     else:
-      print "execute plan"
+      rospy.loginfo("execute plan")
       self.group.execute(plan)
       self.group.clear_pose_targets()
       return 'succeeded'
@@ -324,10 +364,8 @@ class LIFTER(State):
   # @param userdata 前のステートから引き継がれた変数。今回は使用しない
   # @return サービスの呼び出し結果（succeeded or aborted）
   def execute(self, userdata):
-    #ta.set_led(10,3)
-    #ta.set_led(11,3)
-    print 'Move Lifter at (' + str(self.position_[0]) +',' + \
-      str(self.position_[1]) +') in scale velocity ' + str(self.position_[2])
+    rospy.loginfo('Move Lifter at ({},{}) in scale velocity {}'.format(self.position_[0],
+                  self.position_[1],self.position_[2]))
     if(mc.set_lifter_position(self.position_[0],self.position_[1],self.position_[2]) == 'succeeded'):return 'succeeded'
     else: return 'aborted'
 
@@ -357,16 +395,16 @@ class TaskAction:
       service = rospy.ServiceProxy('task_controller', TaskController)
       response = service(_task,_marker)
       return response.result
-    except rospy.ServiceException, e:
-      print "Service call failed: %s"%e
+    except rospy.ServiceException as e:
+      rospy.logerr('Service call failed: {}'.format(e))
 
   def set_led(self, _send_number, _script_number):
     try:
       service = rospy.ServiceProxy('led_control', LedControl)
       response = service(_send_number,_script_number)
       return response.result
-    except rospy.ServiceException, e:
-      print "Service call failed: %s"%e
+    except rospy.ServiceException as e:
+      rospy.logerr('Service call failed: {}'.format(e))
 
 #---------------------------------
 class GO_TO_MARKER(State):
@@ -377,7 +415,7 @@ class GO_TO_MARKER(State):
   def execute(self, userdata):
     #ta.set_led(10,4)
     #ta.set_led(11,4)
-    print 'Go to at (' + self.marker_ +')'
+    rospy.loginfo('Go to at{}'.format(self.marker_))
     if(ta.set_action("marker",self.marker_) == 'succeeded'):return 'succeeded'
     else: return 'aborted'
 
@@ -388,8 +426,9 @@ class TURN_ON_LED(State):
     self.led_ = [int(s) for s in led_string]
 
   def execute(self, userdata):
-    print 'Turn on ' + str(self.led_[0])  + ' script at ' + str(self.led_[1])
-    if(ta.set_led(self.led_[0],self.led_[1]) == 'succeeded'):return 'succeeded'
+    rospy.loginfo('Turn on {} script at {}'.format(self.led_[0],self.led_[1]))
+
+    if(ta.set_led(self.led_[0],self.led_[1]) == 'LED succeeded'):return 'succeeded'
     else: return 'aborted'
 
 ##########################################
@@ -401,7 +440,12 @@ class WAIT(State):
   def __init__(self,_time):
     State.__init__(self, outcomes=['succeeded','aborted'])
     ## @brief 待ち時間[msec]
-    self.time_ = int(_time)
+    self.is_num = any(i.isdigit() for i in str(_time))  #数字か否かの判別
+
+    if(self.is_num):
+      self.time_ = float(_time)
+    else:
+      self.time_ = _time
 
   ## @brief 遷移実行
   # @warning 待ち時間が-1の時はrosparam'/task_programmer/wait_task'がTrueになるまで無限待機する
@@ -410,21 +454,46 @@ class WAIT(State):
   def execute(self, userdata):
     #ta.set_led(10,2)
     #ta.set_led(11,2)
-    if(self.time_ >= 0):
-      print 'wait ' + str(self.time_) + 'msec'
-      rospy.sleep(self.time_ * 0.001)
-      rospy.set_param('/task_programmer/jump', 1)
-    else :
-      print 'wait for /task_programmer/wait_task is False'
+    if(self.is_num):
+      if(self.time_ >= 0):
+        rospy.loginfo('wait {} msec'.format(self.time_))
+        #rospy.sleep(self.time_ * 60) #[min]
+        rospy.sleep(self.time_ * 0.001) #[msec]
+        rospy.set_param('/task_programmer/jump', 1)
+      else :
+        rospy.loginfo('wait for /task_programmer/wait_task is False')
+        rospy.set_param('/task_programmer/wait_task',True)
+        while(rospy.get_param('/task_programmer/wait_task') == True and 
+              not rospy.is_shutdown()):
+          pass
+
+      rospy.set_param('/task_programmer/wait_task',False)
+
+      if (rospy.get_param('/task_programmer/jump') == -1):
+        rospy.logwarn("run previous task")
+        return 'aborted'
+      else : return 'succeeded'
+
+    elif(self.time_ == "video"):
       rospy.set_param('/task_programmer/wait_task',True)
-      while(rospy.get_param('/task_programmer/wait_task') == True): pass
+      play_now =subprocess.Popen("pgrep mplayer",
+                                 shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+      while(rospy.get_param('/task_programmer/wait_task') == True and 
+            len(play_now.stdout.read()) != 0 and not rospy.is_shutdown()):
+        play_now =subprocess.Popen("pgrep mplayer",
+                                  shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
-    rospy.set_param('/task_programmer/wait_task',False)
+      # 動画再生中の場合は、消す
+      if(len(play_now.stdout.read()) != 0):
+        devnull = open('/dev/null', 'w')
+        subprocess.call("killall mplayer;", shell=True, stdout=devnull, stderr=devnull)
 
-    if (rospy.get_param('/task_programmer/jump') == -1):
-      rospy.logwarn("run previous task")
-      return 'aborted'
-    else : return 'succeeded'
+      return 'succeeded'
+
+    else:
+      rospy.logerr("wait argument is error")
+      return 'succeeded'
+
 
 ##########################################
 ## @brief ”ループ”ステート 
@@ -440,30 +509,26 @@ class LOOP(State):
 
     self.count_  = _count
 
-    print "init count is %s \t" % sn.loop_count_array
+    rospy.loginfo('init count is {} \t'.format(sn.loop_count_array))
 
   ## @brief 遷移実行
   # @param userdata 前のステートから引き継がれた変数。今回は使用しない
   # @return ループがある場合はsucceeded、無い場合はaborted
   def execute(self, userdata):
     count = self.count_array_[self.count_[0]]
-    #print "count is %s \t" % count
-    #print "count_array_ is %s \t" % self.count_array_
-    #print "loop_count_array_ is %s \t" % sn.loop_count_array
     count -= 1
 
     if(count > 0):
-      print 'count ' + str(count) + ' times'
+      rospy.loginfo('count {} times'.format(count))
       self.count_array_[self.count_[0]] = count
       return 'succeeded'
     elif(count < -1):
-      print 'infinity loop'
+      rospy.loginfo('infinity loop')
+
       return 'succeeded'
     else:
-      print 'reset count'
+      rospy.loginfo('reset count')
       self.count_array_[self.count_[0]] = sn.loop_count_array[self.count_[0]]
-      #print "count_array_ is %s \t" % self.count_array_
-      #print "loop_count_array_ is %s \t" % sn.loop_count_array
       return 'aborted'
 
 ##########################################
@@ -478,7 +543,8 @@ class FINISH(State):
   # @param userdata 前のステートから引き継がれた変数。今回は使用しない
   # @return succeededのみ
   def execute(self, userdata):
-    print 'FINISHED'
+    rospy.loginfo('FINISHED')
+    screen.kill()
     return 'succeeded'
 
 ##########################################
@@ -514,16 +580,22 @@ class LOAD_MAP(State):
     rospack.list() 
     path = rospack.get_path('task_programmer')
     ## @brief 読み込まれたシナリオのデータ
-    self.map_path = path + "/config/maps/" + str(_name) + ".yaml"
+    if(str(_name) != "None"): self.dir_name = "/config/maps/" + str(_name)
+    else: self.dir_name = "/config/maps"
+    self.map_path = path + self.dir_name +  "/map.yaml"
+    self.keepout_path = path + self.dir_name + "/keepout.yaml"
+    self.wp_client = dynamic_reconfigure.client.Client("/waypoints_editor", timeout=30)
+
 
   def execute(self, userdata):
     rospy.loginfo("load map")
 
     cmd = 'export DISPLAY=:0.0; \
-      gnome-terminal --zoom=0.2 --geometry=+0+480 --tab -e \'bash -c \"rosrun map_server map_server {} __name:=map_localization_server \"\' \
-      --tab -e \'bash -c \"rosrun map_server map_server {} __name:=map_planning_server map:=map_keepout \"\' \
-      ;export DISPLAY=:10.0'
-    subprocess.call(cmd.format(self.map_path,self.map_path), shell=True)
+      gnome-terminal --zoom=0.3 --geometry=+0+480 --tab -- bash -c \"rosrun map_server map_server {} __name:=map_localization_server \" \
+      & gnome-terminal --zoom=0.3 --geometry=+0+480 --tab -- bash -c \"rosrun map_server map_server {} __name:=map_planning_server map:=map_keepout \" \
+      ; export DISPLAY=:10.0'
+    subprocess.call(cmd.format(self.map_path,self.keepout_path), shell=True)
+    self.wp_client.update_configuration({"dir_name":self.dir_name})
     rospy.sleep(1)
 
     try:
@@ -533,8 +605,8 @@ class LOAD_MAP(State):
       rospy.sleep(1)
       return 'succeeded'
 
-    except rospy.ServiceException, e:
-      print "Service call failed: %s"%e
+    except rospy.ServiceException as e:
+      rospy.logerr('Service call failed: {}'.format(e))
       return 'aborted'
 
 class SET_INFLATION(State):
@@ -544,7 +616,7 @@ class SET_INFLATION(State):
     self.client = dynamic_reconfigure.client.Client("/move_base/local_costmap/inflation", timeout=30)
 
   def execute(self, userdata):
-    print "set inflation"
+    rospy.loginfo('set inflation')
     self.client.update_configuration({"inflation_radius":self.value_})
     
     return 'succeeded'
@@ -557,7 +629,7 @@ class SET_MAX_VELOCITY(State):
     self.client = dynamic_reconfigure.client.Client("/move_base/TebLocalPlannerROS", timeout=30)
 
   def execute(self, userdata):
-    print "set max velocity"
+    rospy.loginfo('set max velocity')
     self.client.update_configuration({"max_vel_x":self.velocity_[0], "max_vel_y":self.velocity_[1], "max_vel_theta":self.velocity_[2]})
     
     return 'succeeded'
@@ -576,10 +648,45 @@ class SET_INITIAL_POSE(State):
       rospy.sleep(1)
       return 'succeeded'
 
-    except rospy.ServiceException, e:
-      print "Service call failed: %s"%e
+    except rospy.ServiceException as e:
+      rospy.logerr('Service call failed: {}'.format(e))
       return 'aborted'
-  
+
+class PLAY_VIDEO(State):
+  def __init__(self,_file):
+    State.__init__(self, outcomes=['succeeded','aborted'])
+    self.file = _file
+
+  def execute(self, userdata):
+    rospy.loginfo('plya video : {}'.format(self.file))
+
+    if(screen.video(self.file)): return 'succeeded'
+    else: return 'aborted'
+
+class DISPLAY_IMAGE(State):
+  def __init__(self,_file):
+    State.__init__(self, outcomes=['succeeded','aborted'])
+    self.file = _file
+
+  def execute(self, userdata):
+    rospy.loginfo('display image : {}'.format(self.file))
+
+    if(screen.image(self.file)): return 'succeeded'
+    else: return 'aborted'
+
+class MOTION(State):
+  def __init__(self,_func):
+    State.__init__(self, outcomes=['succeeded','aborted'])
+    self.func = _func.decode('utf-8')
+
+  def execute(self, userdata):
+    rospy.loginfo('motion start : {}'.format(self.func))
+
+    function = "motion." + self.func
+    eval(function)
+
+    return 'succeeded'
+
 ############################################
 ## @brief シナリオの読込クラス
 class Scenario:
@@ -593,7 +700,8 @@ class Scenario:
     rospack.list() 
     path = rospack.get_path('task_programmer')
     ## @brief 読み込まれたシナリオのデータ
-    self.scenario = yaml.load(file(path + "/config/" + file_name))
+    with open(path + '/config/scenarios/' + file_name) as f:
+        self.scenario = yaml.safe_load(f) or {}
     ## @brief タスクの数
     self.scenario_size = len(self.scenario)
     self.loop_count_array = self.scenario_size * [0]
@@ -622,7 +730,7 @@ class Scenario:
   def read_velocity(self, _number):
     rev = dict(self.scenario[_number])
     return rev['action']['arg']
-  
+
   ## @brief リフターの姿勢読込
   # @param _number scenario.yamlのデータ行
   # @return リフターの絶対位置(x,z[m])と移動時間[msec]
@@ -666,7 +774,10 @@ class Scenario:
 
   def read_map(self, _number):
     rev = dict(self.scenario[_number])
-    return rev['action']['arg']
+    if( 'arg' in rev['action']):
+      return rev['action']['arg']
+    else:
+      return "None"
   
   def read_inflation(self, _number):
     rev = dict(self.scenario[_number])
@@ -679,7 +790,11 @@ class Scenario:
   def read_initial_pose(self, _number):
     rev = dict(self.scenario[_number])
     return rev['action']['arg']
-  
+
+  def read_string_arg(self, _number):
+    rev = dict(self.scenario[_number])
+    return rev['action']['arg'].encode('utf_8')
+
 #==================================
 #==================================
 if __name__ == '__main__':
@@ -689,6 +804,8 @@ if __name__ == '__main__':
   na = NaviAction()
   ta = TaskAction()
   sn = Scenario()
+  screen = Screen()
+  motion = Motion()
 
   # scneario_playというステートマシンのインスタンスを作成
   scenario_play = StateMachine(outcomes=['succeeded','aborted'])
@@ -741,9 +858,20 @@ if __name__ == '__main__':
       elif sn.read_task(i) == 'set_initial_pose':
         StateMachine.add('ACTION ' + str(i), SET_INITIAL_POSE(sn.read_initial_pose(i)), \
           transitions={'succeeded':'ACTION '+ str(i+1),'aborted':'ACTION '+str(i+1)})
+      elif sn.read_task(i) == 'motion':
+        StateMachine.add('ACTION ' + str(i), MOTION(sn.read_string_arg(i)), \
+          transitions={'succeeded':'ACTION '+ str(i+1),'aborted':'ACTION '+str(i+1)})
       elif sn.read_task(i) == 'ros_clean':
         StateMachine.add('ACTION ' + str(i), ROS_CLEAN(), \
           transitions={'succeeded':'succeeded','aborted':'aborted'})
+      # for screen---
+      elif sn.read_task(i) == 'video':
+        StateMachine.add('ACTION ' + str(i), PLAY_VIDEO(sn.read_string_arg(i)), \
+          transitions={'succeeded':'ACTION '+ str(i+1),'aborted':'ACTION '+str(i+1)})
+      elif sn.read_task(i) == 'image':
+        StateMachine.add('ACTION ' + str(i), DISPLAY_IMAGE(sn.read_string_arg(i)), \
+          transitions={'succeeded':'ACTION '+ str(i+1),'aborted':'ACTION '+str(i+1)})
+      # -------------
       elif sn.read_task(i) == 'end':
         StateMachine.add('ACTION ' + str(i), FINISH(), \
           transitions={'succeeded':'succeeded','aborted':'aborted'})

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(task_programmer)
 
 ## Find catkin macros and libraries
@@ -12,7 +12,10 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
   tf
+  dynamic_reconfigure
 )
+
+catkin_python_setup()
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -34,21 +37,14 @@ add_definitions(-DNEW_YAMLCPP)
 endif()
 
 # add c++ dependencies :
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c+11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  add_definitions(-DCXX11_SUPPORTED)
-elseif(COMPILER_SUPPORTS_CXX0X)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-  add_definitions(-DCXX11_SUPPORTED)
+if("$ENV{ROS_DISTRO}" STREQUAL "noetic")
+    add_compile_options(-std=c++17)
 else()
-  message(FATAL "c++11 required but not supported")
+    add_compile_options(-std=c++11)
 endif()
 
-# add boost dependencies :
-find_package(Boost REQUIRED COMPONENTS filesystem system signals thread)
+# boost
+find_package(Boost REQUIRED COMPONENTS thread)
 if(NOT Boost_INCLUDE_DIRS)
   message(FATAL "boost required but not supported")
 else()
@@ -65,6 +61,11 @@ endif()
     std_msgs
   )
 #--------------------------
+
+#for dynamic reconfigure--
+generate_dynamic_reconfigure_options(
+  cfg/Waypoints.cfg
+)
 
 catkin_package()
 
@@ -84,3 +85,14 @@ add_executable(lifter_controller_node src/lifter_controller.cpp)
 target_link_libraries(lifter_controller_node ${catkin_LIBRARIES} )
 
 add_dependencies(task_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+file(GLOB python_scripts_DIR
+  "scripts/*.py"
+  "src/${PROJECT_NAME}/*.py"
+)
+
+catkin_install_python(PROGRAMS ${python_scripts_DIR}
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(DIRECTORY config launch scripts
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

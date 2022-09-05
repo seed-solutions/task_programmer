@@ -1,0 +1,16 @@
+topics:
+-
+  name    : navigation
+  topic   : /move_base/cmd_vel
+  timeout : 0.1
+  priority: 1
+-
+  name    : stop
+  topic   : /stop/cmd_vel
+  timeout : 1.0
+  priority: 2
+-
+  name    : gamepad
+  topic   : /gamepad/cmd_vel
+  timeout : 0.1
+  priority: 3

@@ -67,7 +67,7 @@ bool TaskController::moveMarker(std::string _marker){
       //std::cout << cmd_vel_.linear.x << "," << cmd_vel_.linear.y << "," << cmd_vel_.angular.z << std::endl;
       
       cmd_vel_pub_.publish(cmd_vel_);
-      ros::Duration(0.1).sleep();
+      //ros::Duration(0.1).sleep();
     }
   }
   cmd_vel_.linear.x = 0;
@@ -84,13 +84,13 @@ tf::StampedTransform TaskController::GetTransformObject(std::string _base,std::s
 
   try{
     ros::Time now = ros::Time(0);
-    listener_.waitForTransform(_base,_object,now, ros::Duration(2.0));
+    //listener_.waitForTransform(_base,_object,now, ros::Duration(2.0));
     listener_.lookupTransform(_base,_object,now, transform);
   }
   catch (tf::TransformException ex){
     ROS_INFO("No getting point");
     ROS_ERROR("%s",ex.what());
-    ros::Duration(1.0).sleep();
+    //ros::Duration(1.0).sleep();
     transform.setOrigin(tf::Vector3(0.0,0.0,0.0));
   }
 
@@ -106,6 +106,8 @@ bool TaskController::taskControllerCallback(task_programmer::TaskController::Req
     if(moveMarker(_req.marker) == true) _res.result = "succeeded";
     else _res.result = "aborted";
   }
+  
+  return true;
 }
 
 int main(int argc, char **argv)

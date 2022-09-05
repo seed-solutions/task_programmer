@@ -11,13 +11,22 @@
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
 #include <move_base_msgs/MoveBaseAction.h>
+#include <sys/stat.h>
 
 #include <ros/package.h>
+
+//Dynamic reconfigure
+#include <dynamic_reconfigure/server.h>
+#include <task_programmer/WaypointsConfig.h>
+//---- GUI parameters  ---
+std::string DIR_NAME = "/config/maps";
+std::string FILE_NAME = "waypoints";
+bool ENABLE_DEL = false;
 
 //////////////////////////////
 /** 
 * @brief waypointsの作成/読み出し用。
-* @details DUALSHOCKのボタンに応じて関数が呼び出される。
+* @details ゲームパッドのボタンに応じて関数が呼び出される。
 */
 class Waypoint_Edit{
 public:
@@ -28,46 +37,47 @@ public:
   Waypoint_Edit(ros::NodeHandle _nh);
 
   /**
-  * @brief DUALSHOCKデータをサブスクライブした際のコールバック定義
-  * @param _ps3 DUALSHOCKのデータ
+  * @brief ゲームパッドデータをサブスクライブした際のコールバック定義
+  * @param ゲームパッドのデータ
   */
-  void getPS3(const sensor_msgs::JoyPtr& _ps3);
+  void getJoy(const sensor_msgs::JoyPtr& _data);
 
 private:
 //to get tf--
   tf::TransformListener listener_; ///< @brief TFの取得 @sa http://wiki.ros.org/tf
 
-//to get ps3 data--
-  ros::Subscriber ps3_sub_; ///< @brief DUALSHOKデータ取得用サブスクライバーの定義
-  int32_t ps3_start_; ///< @brief DUALSHOCKのスタートボタンデータの格納
-  int32_t ps3_pre_start_; ///< @brief DUALSHOCKの過去のスタートボタンデータの格納
+//to get joy data--
+  ros::Subscriber joy_sub_; ///< @brief DUALSHOKデータ取得用サブスクライバーの定義
+  int32_t joy_start_; ///< @brief ゲームパッドのスタートボタンデータの格納
+  int32_t joy_pre_start_; ///< @brief ゲームパッドの過去のスタートボタンデータの格納
 
-  int32_t ps3_select_;  ///< @brief DUALSHOCKのセレクトボタンデータの格納
+  int32_t joy_select_;  ///< @brief ゲームパッドのセレクトボタンデータの格納
 //----
 
   ros::NodeHandle nh_;  ///< @brief ROSのノードハンドル
   uint16_t counter_;  ///< @brief waypoints番号のカウント
 
   std::string pkg_path_;  ///< @brief task_programmerの絶対位置パス格納
+  
 };
 
 Waypoint_Edit::Waypoint_Edit(ros::NodeHandle _nh)
-  : ps3_start_(0)
-  , ps3_pre_start_(0)
-  , ps3_select_(0)
+  : joy_start_(0)
+  , joy_pre_start_(0)
+  , joy_select_(0)
   , counter_(0)
 { 	
-//to get ps3 data---
+//to get joy data---
   nh_ = _nh;
-  ps3_sub_ = nh_.subscribe("/joy",1, &Waypoint_Edit::getPS3,this);
+  joy_sub_ = nh_.subscribe("/joy",1, &Waypoint_Edit::getJoy,this);
 //--
   pkg_path_ = ros::package::getPath("task_programmer");
 
 }
 
-void Waypoint_Edit::getPS3(const sensor_msgs::JoyPtr& _ps3){
-  ps3_start_ = _ps3->buttons[3];
-  ps3_select_ = _ps3->buttons[0];
+void Waypoint_Edit::getJoy(const sensor_msgs::JoyPtr& _data){
+  joy_start_ = _data->buttons[11];
+  joy_select_ = _data->buttons[10];
 
   static tf::TransformBroadcaster br_now;
   static tf::TransformBroadcaster br_all;
@@ -77,13 +87,23 @@ void Waypoint_Edit::getPS3(const sensor_msgs::JoyPtr& _ps3){
 
   move_base_msgs::MoveBaseGoal goal;
 
+  std::string dir_path = pkg_path_ + DIR_NAME;
+  std::string file_path = pkg_path_ + DIR_NAME + "/" + FILE_NAME + ".yaml";
+
+  struct stat st; //ディレクトリの有無確認用
+
   //スタートボタンが押されたら現在値の座標（TF）をwaypointsとして登録する
-  if (ps3_start_ == 0 && ps3_pre_start_ == 1){
+  if (joy_start_ == 0 && joy_pre_start_ == 1){
+    if(stat(dir_path.c_str(), &st) != 0){ //ディレクトリが存在しない
+      ROS_ERROR("%s is not exist", dir_path.c_str());
+      joy_pre_start_ = joy_start_;
+      return;
+    }
     try{
       listener_.lookupTransform("/map", "/base_link",ros::Time(0), transform_now);
 
       //save postion------------
-      std::ofstream ofs(pkg_path_ + "/config/waypoints.yaml", std::ios_base::app);   
+      std::ofstream ofs(file_path, std::ios_base::app);
       ofs << "- pose:"              << std::endl;
       ofs << "    position:"      << std::endl;
       ofs << "        x: "        << transform_now.getOrigin().x() << std::endl;
@@ -106,8 +126,17 @@ void Waypoint_Edit::getPS3(const sensor_msgs::JoyPtr& _ps3){
     }
   }
   //セレクトボタンが押されたら登録されているwaypointsをTFとして発行する
-  else if (ps3_select_ == 1){  //readm yaml file
-    YAML::Node config = YAML::LoadFile(pkg_path_ + "/config/waypoints.yaml");
+  else if (joy_select_ == 1){  //readm yaml file
+    if(stat(dir_path.c_str(), &st) != 0){ //ディレクトリが存在しない
+      ROS_ERROR("%s is not exist", dir_path.c_str());
+      joy_pre_start_ = joy_start_;
+      return;
+    }
+    std::ifstream file(file_path);
+    if(!file)  std::ofstream ofs(file_path);
+
+    YAML::Node config = YAML::LoadFile(file_path);
+
     const YAML::Node &wp_node_tmp = config;
     const YAML::Node *wp_node = wp_node_tmp ? &wp_node_tmp : NULL;
     if(wp_node != NULL){
@@ -130,12 +159,28 @@ void Waypoint_Edit::getPS3(const sensor_msgs::JoyPtr& _ps3){
     }
   }
   //L1,L2,R1,R2ボタンが同時押しされたら、waypointsをyamlファイルごと削除する
-  else if (_ps3->buttons[8] == 1 && _ps3->buttons[9] == 1 && _ps3->buttons[10] == 1 && _ps3->buttons[11] == 1){
+  else if (ENABLE_DEL && _data->buttons[4] == 1 && _data->buttons[5] == 1 && _data->buttons[6] == 1 && _data->buttons[7] == 1){
+    if(stat(dir_path.c_str(), &st) != 0){ //ディレクトリが存在しない
+      ROS_ERROR("%s is not exist", dir_path.c_str());
+      joy_pre_start_ = joy_start_;
+      return;
+    }
     //L1,L2,R1,R2 == 1
-    std::ofstream ofs(pkg_path_ + "/config/waypoints.yaml", std::ios_base::trunc);
+    std::ofstream ofs(file_path, std::ios_base::trunc);
   }
 
-  ps3_pre_start_ = ps3_start_;
+  joy_pre_start_ = joy_start_;
+
+}
+
+void callback(task_programmer::WaypointsConfig& config, uint32_t level)
+{
+
+  ROS_INFO("Reconfigure Request: %s, %s, %d", config.dir_name.c_str(), config.file_name.c_str(), config.enable_del);
+
+  DIR_NAME = config.dir_name.c_str();
+  FILE_NAME = config.file_name.c_str();
+  ENABLE_DEL = config.enable_del;
 
 }
 
@@ -145,6 +190,11 @@ int main(int argc, char **argv)
 	ros::NodeHandle nh;
 
   Waypoint_Edit we(nh);
+
+  dynamic_reconfigure::Server<task_programmer::WaypointsConfig> server;
+  dynamic_reconfigure::Server<task_programmer::WaypointsConfig>::CallbackType f;
+  f = boost::bind(&callback, _1, _2);
+  server.setCallback(f);
 
 	ros::spin();
 

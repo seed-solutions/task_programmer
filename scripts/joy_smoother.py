@@ -10,11 +10,11 @@ class JoySmoother():
 
     self.joy_publisher = rospy.Publisher('joy_out', Joy, queue_size=1)
     self.joy = Joy()
-    self.joy.axes = 29 * [0]
-    self.joy.buttons = 17 * [0]
+    self.joy.axes = 6 * [0]
+    self.joy.buttons = 13 * [0]
     self.pre_joy = Joy()
-    self.pre_joy.axes = 29 * [0]
-    self.pre_joy.buttons = 17 * [0]
+    self.pre_joy.axes = 6 * [0]
+    self.pre_joy.buttons = 13 * [0]
 
 
   def callback(self,data):
