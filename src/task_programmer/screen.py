@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
+import sys
 import rospy
 import rospkg
 import glob
@@ -12,13 +13,18 @@ class Screen:
     self.path = rospack.get_path('task_programmer')
 
   def video(self,_file):
-    if(_file == "kill"):
+    if sys.version_info.major != 2:
+      file_name = _file.decode('utf-8')
+    else:
+      file_name = _file
+
+    if(file_name == "kill"):
       cmd = 'killall mplayer;'
       subprocess.call(cmd, shell=True)
       return True
 
-    file_path = self.path + "/config/screen/videos/" + _file.decode('utf-8')
-    if not glob.glob(file_path +".*"):
+    file_path = self.path + "/config/screen/videos/" + "\'" + file_name + "\'"
+    if not glob.glob(file_path.replace('\'','') +".*"):
       rospy.logerr(file_path + ".* does not exist")
       return False
 
@@ -29,13 +35,18 @@ class Screen:
     return True
 
   def image(self,_file):
-    if(_file == "kill"):
+    if sys.version_info.major != 2:
+      file_name = _file.decode('utf-8')
+    else:
+      file_name = _file
+
+    if(file_name == "kill"):
       cmd = 'killall eog;'
       subprocess.call(cmd, shell=True)
       return True
 
-    file_path = self.path + "/config/screen/images/" + _file.decode('utf-8')
-    if not glob.glob(file_path +".*"):
+    file_path = self.path + "/config/screen/images/" + "\'" + file_name + "\'"
+    if not glob.glob(file_path.replace('\'','') +".*"):
       rospy.logerr(file_path + ".* does not exist")
       return False
 
