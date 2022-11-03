@@ -20,11 +20,11 @@ source ${ros_ws}/devel/setup.bash
 roscd task_programmer/scripts
 
 if [ ${command} = "controller" ]; then 
+  :
+elif [ ${command} = "make_map" ]; then
   rosnode kill --all & killall -9 roscore & killall -9 rosmaster;
   killall gnome-terminal-server;
   gnome-terminal --zoom=0.5 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer robot_bringup.launch;exit\" "'
-
-elif [ ${command} = "make_map" ]; then 
   gnome-terminal --zoom=0.5 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch --wait task_programmer make_map.launch;exit\" "'
 
 elif [ ${command} = "save_map" ]; then
@@ -33,6 +33,9 @@ elif [ ${command} = "save_map" ]; then
 
 elif [ ${command} = "static_map" ]; then 
   map_name=$7
+  rosnode kill --all & killall -9 roscore & killall -9 rosmaster;
+  killall gnome-terminal-server;
+  gnome-terminal --zoom=0.5 --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer robot_bringup.launch;exit\" "'
   gnome-terminal --zoom=0.5 \
     --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch --wait task_programmer static_map.launch dir_name:='${map_name}' can_del_wp:=true; exit\" "'
 #    --tab -e 'bash -c "expect ssh.exp '${user_name}'@'${robot_ip}' '${password}' \"sleep 1;export ROS_IP='${robot_ip}'\" \"roslaunch task_programmer --wait realsense_laser.launch;exit\" "'
@@ -50,7 +53,7 @@ elif [ ${command} = "scenario_restart" ]; then
   gnome-terminal --zoom=0.5 --geometry=+0+0 --tab -e 'bash -c "export ROS_MASTER_URI=http://'${robot_ip}':11311;export ROS_IP='${local_ip}';rosparam set /task_programmer/wait_task False ;exit"'
 
 elif [ ${command} = "rviz" ]; then 
-  gnome-terminal --zoom=0.5 --tab -e 'bash -c "export ROS_MASTER_URI=http://'${robot_ip}':11311;export ROS_IP='${local_ip}';sleep 3;roslaunch --wait task_programmer view.launch;exit"'
+  gnome-terminal --zoom=0.5 --tab -e 'bash -c "export ROS_MASTER_URI=http://'${robot_ip}':11311;export ROS_IP='${local_ip}';roslaunch --wait task_programmer view.launch;exit"'
 
 elif [ ${command} = "operation" ]; then 
   action=$7
