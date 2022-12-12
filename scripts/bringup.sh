@@ -99,6 +99,8 @@ elif [ ${command} = "kill" ]; then
   killall gnome-terminal-server
 
 elif [ ${command} = "shutdown" ]; then 
+  rosclean purge -y;
+  sleep 1;
   expect ssh.exp ${user_name}@${robot_ip} ${password} "expect -c \" spawn env LANG=C sudo shutdown -h now; expect password; send ${password}\n; interact \" "
 
 elif [ ${command} = "reboot" ]; then 

@@ -35,6 +35,10 @@ from task_programmer.screen import Screen
 ##-- for test motion of noid
 from task_programmer.motion import Motion
 
+##-- for button
+from task_programmer.button import Button
+import threading
+
 ###########################################
 ## @brief ナビゲーション関連のクラス
 class NaviAction:
@@ -60,6 +64,14 @@ class NaviAction:
     self.tf_listener_ = tf.TransformListener()
 
     self.wp_number_ = 0
+
+  def get_wp(self):
+    dir_name = self.wp_client.get_configuration(timeout=5)['dir_name']
+    file_name = self.wp_client.get_configuration(timeout=5)['file_name']
+    with open(self.path + dir_name + '/' + file_name + '.yaml') as f:
+        config = yaml.safe_load(f) or {}
+
+    return config
 
   ## @brief ゴールポジションの設定と移動の開始
   # @param _number waypointsの番号(0以上の数値）
@@ -674,6 +686,62 @@ class DISPLAY_IMAGE(State):
     if(screen.image(self.file)): return 'succeeded'
     else: return 'aborted'
 
+class DISPLAY_BUTTON(State):
+  def __init__(self,_command):
+    State.__init__(self, outcomes=['succeeded','aborted'])
+    self.command = _command.decode('utf-8')
+
+  def execute(self, userdata):
+    rospy.loginfo('button window : {}'.format(self.command))
+
+    if(self.command == "wp"):
+      rospy.sleep(0.5)
+      wp_config = na.get_wp()
+      for i in range(len(wp_config)):
+        rev = dict(wp_config[i])
+        if('name' in rev['pose']):
+          btn.wp[rev['pose']['name']] = i
+        else:
+          btn.wp["P"+str(i)] = i
+
+      th1 = threading.Thread(target=btn.select_wp)
+      th1.start()
+
+      rospy.set_param('/task_programmer/wait_task',True)
+      while(rospy.get_param('/task_programmer/wait_task') == True and 
+            btn.running and not rospy.is_shutdown()):
+        pass
+      if(btn.running): btn.quit()
+
+      th1.join()
+
+      if(btn.wp_number != -1):
+        na.wp_number_ = btn.wp_number
+        rospy.loginfo('select_wp : {}'.format(btn.wp_number))
+        return 'succeeded'
+      else:
+        rospy.loginfo('aborted, select_wp : {}'.format(btn.wp_number))
+        screen.kill()
+        return 'aborted'
+
+    elif(self.command == "start"):
+      rospy.sleep(0.5)
+      th1 = threading.Thread(target=btn.start)
+      th1.start()
+
+      rospy.set_param('/task_programmer/wait_task',True)
+      while(rospy.get_param('/task_programmer/wait_task') == True and 
+            btn.running and not rospy.is_shutdown()):
+        pass
+      if(btn.running): btn.quit()
+
+      th1.join()
+      return 'succeeded'
+
+    else:
+      rospy.logwarn('{} is not correct'.format(self.command)) 
+      return 'succeeded'
+
 class MOTION(State):
   def __init__(self,_func):
     State.__init__(self, outcomes=['succeeded','aborted'])
@@ -806,6 +874,7 @@ if __name__ == '__main__':
   sn = Scenario()
   screen = Screen()
   motion = Motion()
+  btn = Button()
 
   # scneario_playというステートマシンのインスタンスを作成
   scenario_play = StateMachine(outcomes=['succeeded','aborted'])
@@ -871,6 +940,11 @@ if __name__ == '__main__':
       elif sn.read_task(i) == 'image':
         StateMachine.add('ACTION ' + str(i), DISPLAY_IMAGE(sn.read_string_arg(i)), \
           transitions={'succeeded':'ACTION '+ str(i+1),'aborted':'ACTION '+str(i+1)})
+      # -------------
+      # for button--
+      elif sn.read_task(i) == 'button':
+        StateMachine.add('ACTION ' + str(i), DISPLAY_BUTTON(sn.read_string_arg(i)), \
+          transitions={'succeeded':'ACTION '+ str(i+1),'aborted':'aborted'})
       # -------------
       elif sn.read_task(i) == 'end':
         StateMachine.add('ACTION ' + str(i), FINISH(), \
