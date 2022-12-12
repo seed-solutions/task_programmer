@@ -702,7 +702,7 @@ class DISPLAY_BUTTON(State):
         if('name' in rev['pose']):
           btn.wp[rev['pose']['name']] = i
         else:
-          btn.wp["P"+str(i)] = i
+          btn.wp["p"+str(i)] = i
 
       th1 = threading.Thread(target=btn.select_wp)
       th1.start()
