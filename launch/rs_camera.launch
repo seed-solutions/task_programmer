@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <arg name="serial_no_camera" default="013422062241"/> 
+  <arg name="camera"           default="chest_camera"/>	
+  <arg name="tf_prefix_camera" default="$(arg camera)"/>
+
+  <group ns="$(arg camera)">
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+      <arg name="serial_no"     value="$(arg serial_no_camera)"/>
+      <arg name="tf_prefix"     value="$(arg tf_prefix_camera)"/>
+      <arg name="initial_reset" value="true"/>
+      <arg name="filters"       value="pointcloud"/>
+    </include>
+  </group>
+</launch>
