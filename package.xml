@@ -45,5 +45,6 @@
 
   <depend>global_planner</depend>
   <depend>twist_mux</depend>
+  <depend>find_object_2d</depend>
 
 </package>
