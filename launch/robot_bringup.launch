@@ -5,6 +5,7 @@
   <arg name="robot_model" default="typeg"/>
   <arg name="GAMEPAD_FUNC" default="true"/>
   <arg name="LIFTER_CONTROL" default="true"/>
+  <arg name="WP_MANAGER" default="true"/>
 
   <include file="$(find seed_r7_bringup)/launch/seed_r7_bringup.launch">
     <arg name="robot_model" value="$(arg robot_model)"/>
@@ -23,5 +24,9 @@
 
   <!-- control lifter by gamepad -->
   <node pkg="task_programmer" type="lifter_controller_node" name="lifter_controller_node" if="$(arg LIFTER_CONTROL)"/>
+
+  <!-- wp manager node -->
+  <node pkg="seed_rviz_plugin" type="wp_marker_manager_node" name="wp_marker_manager_node" if="$(arg WP_MANAGER)"/>
+
 
 </launch>
