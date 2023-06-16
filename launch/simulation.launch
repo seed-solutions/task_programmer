@@ -6,6 +6,7 @@
   <arg name="can_del_wp" default="true"/>
   <arg name="localization_map_name" default="map"/>
   <arg name="keepout_map_name" default="keepout" />
+  <arg name="WP_MANAGER" default="true"/>
 
   <include file="$(find seed_r7_bringup)/launch/seed_r7_bringup.launch">
     <arg name="robot_model" value="$(arg robot_model)"/>
@@ -33,5 +34,8 @@
 
   <!-- gamepad function -->
   <node pkg="task_programmer" type="gamepad_function.py" name="gamepad_function"/>
+
+  <!-- wp manager node -->
+  <node pkg="seed_rviz_plugin" type="wp_marker_manager_node" name="wp_marker_manager_node" if="$(arg WP_MANAGER)"/>
 
 </launch>
