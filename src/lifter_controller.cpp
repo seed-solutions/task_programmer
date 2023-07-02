@@ -1,7 +1,8 @@
 #include "lifter_controller.h"
 
 LifterController::LifterController(const ros::NodeHandle _nh) :
-  nh_(_nh),lifter_ratio_(0.01),update_joints(true),on_protective_stop(false)
+  nh_(_nh),lifter_ratio_(0.01),on_protective_stop(false),
+  update_joints_once(true),update_joints(true)
 {
 
   controller_rate_ = 50;
@@ -13,6 +14,8 @@ LifterController::LifterController(const ros::NodeHandle _nh) :
   diag_sub_ = nh_.subscribe("/diagnostics",1, &LifterController::diagnosticsCallback,this);
 
   init_follow_joint_trajectory();
+
+  
 
 }
 
@@ -34,10 +37,23 @@ void LifterController::init_follow_joint_trajectory()
 
 void LifterController::jointStateCallback(const sensor_msgs::JointState& _joint_data)
 {
-  if(update_joints)
+  if(update_joints_once)
   {
-    joint_angles_["ankle"] = _joint_data.position[0];
-    joint_angles_["knee"] = _joint_data.position[1];
+    std::vector<std::string> joint_names = _joint_data.name;
+    std::vector<std::string>::iterator itr;
+
+    itr = std::find(joint_names.begin(),joint_names.end(),std::string("ankle_joint"));
+    ankle_jnumber_ = std::distance(joint_names.begin(),itr);
+
+    itr = std::find(joint_names.begin(),joint_names.end(),std::string("knee_joint"));
+    knee_jnumber_ = std::distance(joint_names.begin(),itr);
+
+    update_joints_once = false;
+  }
+  else if(update_joints)
+  {
+    joint_angles_["ankle"] = _joint_data.position[ankle_jnumber_];
+    joint_angles_["knee"] = _joint_data.position[knee_jnumber_];
   }
 
 }
