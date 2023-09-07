@@ -56,6 +56,9 @@ private:
   float lifter_ratio_;
   bool update_joints,on_protective_stop;
 
+  int ankle_jnumber_,knee_jnumber_;
+  bool update_joints_once;
+
 };
 
 #endif
